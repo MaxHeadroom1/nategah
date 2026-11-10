@@ -150,6 +150,16 @@ body.dark-theme .question,body.dark-theme .lesson-grid h3{color:#fff}
 body.dark-theme .infoFeatures{color:#dde2ff}
 body.dark-theme .formula{background:#3d3670;color:#fff;border-color:#6a61a8}
 
+
+.hero.compactHero,.infoFeatures.compactFeatures{display:none}
+#navAbout,#navSubjects,#navHome{touch-action:manipulation}
+.hero-image{pointer-events:none}
+.lesson-grid .en,.lesson-grid .ar{height:100%}
+.lesson-grid p{margin-bottom:10px}
+.survey iframe{max-width:100%}
+body.dark-theme .survey p{color:#e2e3ff}
+@media(max-width:900px){.hero.compactHero{display:none}}
+
 </style>
 </head>
 <body>
@@ -320,10 +330,10 @@ function surveyCard(){
 function home(){
 var passed=count(s.revealed);
 return '<section class="card"><h2>جاهز نذاكر؟</h2><p class="muted">كل سؤال فيه شرح إنجليزي سهل، وشرح عربي كامل من المحاضرة، والنقاط اللي لازم تحفظها، وبعدها سؤال الامتحان الأصلي. لما تجاوب تشوف ليه كل اختيار صح أو غلط.</p>'+pct(passed)+'<div class="mini">اتشرح واتراجع '+passed+' من 30 سؤال</div></section>'+
-'<div class="cards">'+
+'<div class="cards" id="subjects">'+
 '<section class="card tile"><div class="emoji">📘</div><h2>وضع التعلّم</h2><p>شرح ثم سؤال، تصحيح فوري مع أسباب كل اختيار، وتقدر تكمل من آخر نقطة وصلت لها.</p>'+btn(passed?'كمّل المراجعة':'ابدأ شرح الأسئلة','learn','primary')+'</section>'+
 '<section class="card tile"><div class="emoji">⏱️</div><h2>وضع امتحان 2024</h2><p>30 سؤال خلال 30 دقيقة، بدون عرض أي حلول قبل تسليم الورقة، وتصحيح نهائي من 15.</p>'+btn(s.mode==='exam'&&!s.examDone&&s.examStartedAt?'كمّل الامتحان':'ابدأ امتحان جديد','exam','dark')+'</section></div>'+
-'<section class="card"><div class="tagrow">'+label('المرجع: امتحان 2024 فقط','navy')+label('بدون Fresh Concrete')+'</div><p class="small muted" style="margin-top:10px">الأسئلة 1–18 للركام، و19–30 للأسمنت. محاضرة الإضافات ضمن المنهج لكنها غير ممثلة بأسئلة مباشرة في نموذج 2024. التقدم بيتحفظ داخل متصفح الموبايل، ومش بيترفع لسيرفر.</p></section>';
+'<section class="card" id="about"><div class="tagrow">'+label('المرجع: امتحان 2024 فقط','navy')+label('بدون Fresh Concrete')+'</div><p class="small muted" style="margin-top:10px">الأسئلة 1–18 للركام، و19–30 للأسمنت. محاضرة الإضافات ضمن المنهج لكنها غير ممثلة بأسئلة مباشرة في نموذج 2024. التقدم بيتحفظ داخل متصفح الموبايل، ومش بيترفع لسيرفر.</p></section>';
 }
 function sieveTable(kind){
 var d=sieves[kind];var rows='<tr><th>Sieve (mm)</th>'+d.size.map(function(n){return '<th>'+n+'</th>'}).join('')+'</tr><tr><th>% Passing</th>'+d.pass.map(function(n){return '<td>'+n+'</td>'}).join('')+'</tr>';
@@ -336,14 +346,19 @@ return '<div class="choices" role="group" aria-label="اختيارات السؤ�
 function navgrid(){return '<div class="gridnav" aria-label="التنقل بين الأسئلة">'+qs.map(function(q,i){return '<button class="'+(i===s.index?'active':(s.mode==='learn'?s.revealed[i]:s.answers[i])?'done':'')+'" data-action="jump" data-value="'+i+'" title="سؤال '+(i+1)+'">'+(i+1)+'</button>'}).join('')+'</div>'}
 function learning(q,i){
 return '<div class="tagrow">'+label('شرح قبل الحل')+label(q.unit,'navy')+label(q.slide,'navy')+'</div>'+
-'<h2>'+esc(q.topic)+'</h2>'+
-'<h3>Easy English</h3><div class="en">'+esc(q.en)+'</div>'+
-'<h3 style="margin-top:19px">الشرح بالعربي العامي</h3><div class="ar">'+esc(q.ar)+'</div>'+
-'<h3 style="margin-top:20px">النقاط اللي لازم تفهمها وتحفظها</h3><ul class="knowledge">'+q.key.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>'+
-(q.formula?'<h3>القانون أو العلاقة</h3><div class="formula">'+esc(q.formula)+'</div>':'')+
+'<div class="lesson-head"><h2>شرح السؤال '+(i+1)+'</h2><span class="tag navy">English ↔ العربية</span></div>'+
+'<div class="lesson-grid">'+
+  '<section class="en" lang="en" dir="ltr"><h3>✦ Explanation</h3><p>'+esc(q.en)+'</p><p style="font-size:12px;opacity:.8"><b>Topic:</b> '+esc(q.topic)+'</p></section>'+
+  topicViz(i)+
+  '<section class="ar" lang="ar" dir="rtl"><h3>✦ الشرح بالعربي</h3><p>'+esc(q.ar)+'</p></section>'+
+'</div>'+
+'<div class="lesson-points">'+
+ '<section><h3>✦ أهم النقاط اللي لازم تفهمها</h3><ul class="knowledge">'+q.key.map(function(x){return '<li dir="ltr" style="text-align:left">'+esc(x)+'</li>'}).join('')+'</ul></section>'+
+ '<section>'+(q.formula?'<h3>✦ القانون / Formula</h3>'+mathFor(q,i):'<h3>✦ خُلاصة المراجعة</h3><p class="muted">افهم الفكرة من الشرح والرسمة، وبعدها جرب تحل السؤال الأصلي.</p>')+'</section>'+
+'</div>'+
 (i>=14&&i<=17?referenceTables():'')+
-'<div class="callout">بعد ما تراجع النقاط كلها، اضغط «حل السؤال الأصلي». الإجابة مش هتظهر غير بعد اختيارك والتصحيح.</div>'+
-'<div class="bar">'+btn('← السابق','prev','secondary')+btn('حل السؤال الأصلي ←','ask','primary')+'</div>'
+'<div class="callout">بعد ما تراجع الشرح والرسمة، اضغط «حل السؤال الأصلي». هنوريك الإجابة الصح وسبب كل اختيار بعد ما تجاوب.</div>'+
+'<div class="bar">'+btn('السؤال السابق','prev','secondary')+btn('حل السؤال الأصلي ←','ask','primary')+'</div>'
 }
 function feedback(q,i){
 var val=s.answers[i],correct=val===letters[q.a];return '<div class="feedback'+(correct?'':' bad')+'"><h3>'+(correct?'✅ إجابتك صحيحة':'❌ الإجابة الصحيحة: '+letters[q.a])+': '+esc(q.o[q.a])+'</h3><p class="small">دلوقتي نفهم سبب كل اختيار:</p>'+
@@ -355,7 +370,7 @@ var locked=s.mode==='learn'&&s.revealed[i];
 var c='<div class="tagrow">'+label('السؤال الأصلي • 2024','navy')+label(q.unit)+'</div><div class="question">'+esc((i+1)+'. '+q.q)+'</div>'+(i>=14&&i<=17?referenceTables():'')+choices(q,i,locked);
 if(s.mode==='learn'){c+=locked?feedback(q,i):'<div class="callout">اختار A أو B أو C أو D وبعدها اضغط «صحح إجابتي». مش هنحسب السؤال غلط غير بعد ما تكون اتعلمت فكرته.</div>';
 c+='<div class="bar">'+btn('ارجع للشرح','backlearn','secondary')+(locked?btn(i===29?'شوف ملخص مذاكرتك':'السؤال التالي','next','primary'):btn('صحح إجابتي','check','primary',!s.answers[i]))+'</div>';
-}else{c+='<div class="bar">'+btn('← السابق','prev','secondary')+btn(i===29?'مراجعة وتسليم':'التالي ←','next','primary')+'</div><div class="callout">وضع الامتحان: مفيش أي حلول قبل التسليم.</div>';}return c
+}else{c+='<div class="bar">'+btn('← السابق','prev','secondary')+btn(i===29?'مراجعة وتسليم':'التالي ←','next','primary')+'</div><div class="callout">وضع الامتحان: مفيش أي حلول قبل التسليم.</div>';}if(s.mode==='learn'&&i===29&&locked)c+=surveyCard();return c
 }
 function lessonScreen(){
 if(s.mode==='exam'&&examRemaining()===0){s.examDone=true;s.view='result';save();return results()}
@@ -371,12 +386,14 @@ return '<section class="card"><div class="tagrow">'+label('مراجعة قبل �
 function results(){
 var n=score(),marks=(n*.5).toFixed(1);
 var summary='<div class="card" style="text-align:center"><div class="tagrow" style="justify-content:center">'+label('تم تصحيح امتحان 2024')+'</div><div class="resultnum">'+marks+' / 15</div><p>إجابات صحيحة: <strong>'+n+'/30</strong> — تقدر تراجع سبب كل إجابة بالأسفل.</p><div class="bar">'+btn('ابدأ امتحان جديد','restart','primary')+btn('الصفحة الرئيسية','home','secondary')+'</div></div>';
-var items=qs.map(function(q,i){var val=s.answers[i]||'—',good=val===letters[q.a];return '<details class="reviewitem"'+(!good?' open':'')+'><summary>Q'+(i+1)+' · '+esc(q.topic)+' '+(good?'✅':'❌')+'</summary><div class="answer-chips"><span class="chip '+(good?'ok':'no')+'">إجابتك: '+val+'</span><span class="chip ok">الصحيح: '+letters[q.a]+'</span></div><p class="en">'+esc(q.q)+'</p><div class="ar">'+esc(q.ar)+'</div><ul class="knowledge">'+q.key.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>'+(q.formula?'<div class="formula">'+esc(q.formula)+'</div>':'')+q.why.map(function(x,j){return '<div class="explainline"><b>'+letters[j]+')</b> '+esc(x)+'</div>'}).join('')+'</details>'}).join('');
-return summary+'<section class="card"><h2>تصحيح كل الأسئلة</h2>'+items+'</section>'
+var items=qs.map(function(q,i){var val=s.answers[i]||'—',good=val===letters[q.a];return '<details class="reviewitem"'+(!good?' open':'')+'><summary>Q'+(i+1)+' · '+esc(q.topic)+' '+(good?'✅':'❌')+'</summary><div class="answer-chips"><span class="chip '+(good?'ok':'no')+'">إجابتك: '+val+'</span><span class="chip ok">الصحيح: '+letters[q.a]+'</span></div><p class="en">'+esc(q.q)+'</p><div class="ar">'+esc(q.ar)+'</div><ul class="knowledge">'+q.key.map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'</ul>'+mathFor(q,i)+q.why.map(function(x,j){return '<div class="explainline"><b>'+letters[j]+')</b> '+esc(x)+'</div>'}).join('')+'</details>'}).join('');
+return summary+surveyCard()+'<section class="card"><h2>تصحيح كل الأسئلة</h2>'+items+'</section>'
 }
 function render(){
 if(s.mode==='exam'&&!s.examDone&&s.examStartedAt&&examRemaining()===0){s.examDone=true;s.view='result';save()}
 root.innerHTML=s.view==='home'?home():s.view==='result'?results():s.view==='review'?review():lessonScreen();
+document.querySelector('.hero').classList.toggle('compactHero',s.view!=='home');
+document.querySelector('.infoFeatures').classList.toggle('compactFeatures',s.view!=='home');
 document.getElementById('status').textContent=s.mode==='exam'&&!s.examDone&&s.examStartedAt?'الامتحان شغال • حفظ تلقائي':'التقدم محفوظ على جهازك تلقائيًا';
 save()
 }
@@ -398,6 +415,27 @@ if(action==='backquiz'){s.view='quiz';render();scrollTop()}
 }
 root.addEventListener('click',function(e){var b=e.target.closest('button[data-action]');if(!b||b.disabled)return;handle(b.getAttribute('data-action'),b.getAttribute('data-value'))});
 document.getElementById('share').addEventListener('click',async function(){try{if(navigator.share){await navigator.share({title:'مراجعة ميد CES251s 2024',url:location.href});return}}catch(e){}try{await navigator.clipboard.writeText(location.href);this.textContent='تم نسخ الرابط ✓'}catch(e){this.textContent=location.href}});
+
+function goSection(id){
+  homeAction();
+  var target=document.getElementById(id);
+  if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
+}
+document.getElementById('heroExam').addEventListener('click',function(){handle('exam')});
+document.getElementById('heroLearn').addEventListener('click',function(){handle('learn')});
+document.getElementById('navHome').addEventListener('click',homeAction);
+document.getElementById('navSubjects').addEventListener('click',function(){goSection('subjects')});
+document.getElementById('navAbout').addEventListener('click',function(){goSection('about')});
+var themeToggle=document.getElementById('themeToggle');
+try{if(localStorage.getItem('ces251s-theme')==='dark')document.body.classList.add('dark-theme')}catch(e){}
+themeToggle.textContent=document.body.classList.contains('dark-theme')?'☀':'☾';
+themeToggle.addEventListener('click',function(){
+  document.body.classList.toggle('dark-theme');
+  var isDark=document.body.classList.contains('dark-theme');
+  themeToggle.textContent=isDark?'☀':'☾';
+  try{localStorage.setItem('ces251s-theme',isDark?'dark':'light')}catch(e){}
+});
+
 setInterval(function(){if(s.mode==='exam'&&!s.examDone&&s.examStartedAt){if(examRemaining()===0){s.examDone=true;s.view='result';render()}else{var c=document.getElementById('clock');if(c)c.textContent=timefmt(examRemaining())}}},1000);
 render();
 })();
