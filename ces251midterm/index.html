@@ -209,6 +209,114 @@ function count(x){return Object.keys(x||{}).filter(function(k){return x[k]!==und
 function examRemaining(){return Math.max(0,1800-Math.floor((Date.now()-s.examStartedAt)/1000))}
 function timefmt(sec){return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
 function score(){return qs.reduce(function(sum,q,i){return sum+(s.answers[i]===letters[q.a]?1:0)},0)}
+
+/* Scientific diagrams, properly stacked mathematical fractions, and anonymous feedback */
+function stacked(n,d){return '<span class="frac"><span class="num">'+n+'</span><span class="den">'+d+'</span></span>'}
+function mathFor(q,i){
+  var x='';
+  switch(i){
+    case 0:x='Voids (%) = (1 − '+stacked('Bulk density','Particle SG × 1000')+') × 100';break;
+    case 2:x='Na₂O<sub>eq</sub> = Na₂O + 0.64 K₂O';break;
+    case 3:x='ρ<sub>bulk</sub> = '+stacked('M<sub>dry</sub>','V<sub>container</sub>');break;
+    case 4:x='D<sub>max</sub> = min ( '+stacked('b','5')+' , '+stacked('t','3')+' , '+stacked('2S','3')+' )';break;
+    case 5:x='SG<sub>app</sub> = '+stacked('OD','OD − SUB')+' = '+stacked('5000','5000 − 3000')+' = 2.50';break;
+    case 7:x='Absorption (%) = '+stacked('SSD − OD','OD')+' × 100';break;
+    case 14:x='FM = '+stacked('6 + 30 + 42 + 75 + 85 + 100','100')+' = 3.38';break;
+    case 15:x=stacked('d','D')+' = '+stacked('8','32');break;
+    case 16:x='Designation = '+stacked('0','4')+' CP';break;
+    case 17:x=stacked('D','d')+' = '+stacked('32','8')+' = 4 &gt; 2';break;
+    case 20:x='C₃A + Gypsum + H₂O → AFt (Ettringite)';break;
+    case 21:x='CaO + H₂O → Ca(OH)₂';break;
+    case 24:x='C₃A = 2.65A − 1.69F &nbsp; | &nbsp; C₄AF = 3.04F';break;
+    case 25:x='Na₂O<sub>eq</sub> ≤ 0.6%';break;
+    default:x=esc(q.formula||'');break;
+  }
+  return x?'<div class="formula" dir="ltr" aria-label="Engineering formula">'+x+'</div>':'';
+}
+function vizFrame(markup,caption){
+  return '<div class="diagram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 212" role="img" aria-label="'+esc(caption)+'">'+
+    '<rect width="300" height="212" rx="14" fill="#fbfbff"/>'+markup+'</svg><div class="caption">'+esc(caption)+'</div></div>';
+}
+function topicViz(i){
+  var g='',caption='';
+  if(i===1){
+    caption='Aggregate shapes: flaky / elongated / rounded';
+    g='<g fill="#b5b8c6" stroke="#5f668d" stroke-width="2"><ellipse cx="56" cy="72" rx="36" ry="12"/><ellipse cx="153" cy="71" rx="13" ry="40" transform="rotate(-24 153 71)"/><circle cx="250" cy="72" r="27"/></g>'+
+      '<g fill="#373d70" text-anchor="middle" font-size="12" font-family="Arial"><text x="56" y="135">Flaky</text><text x="153" y="135">Elongated</text><text x="250" y="135">Rounded</text></g>'+
+      '<g stroke="#6659ce" stroke-width="1.5"><path d="M21 114h70M56 109v10M21 109v10M91 109v10"/></g>';
+  }else if(i===2){
+    caption='Reactive aggregate + Alkalis + Moisture → expanding gel';
+    g='<g font-size="12" fill="#272a5d" text-anchor="middle" font-family="Arial">'+
+    '<rect x="10" y="33" rx="12" width="83" height="50" fill="#e5edff" stroke="#a0afe3"/><text x="51" y="54">Reactive</text><text x="51" y="71">aggregate</text>'+
+    '<rect x="109" y="33" rx="12" width="83" height="50" fill="#f2edff" stroke="#c0a4f7"/><text x="150" y="62">Alkalis</text>'+
+    '<rect x="208" y="33" rx="12" width="83" height="50" fill="#e8f9ff" stroke="#a5d9e6"/><text x="249" y="62">Moisture</text>'+
+    '<text x="100" y="62" font-size="20">+</text><text x="199" y="62" font-size="20">+</text>'+
+    '<path d="M150 85v26m-6-6 6 6 6-6" fill="none" stroke="#7364db" stroke-width="2"/>'+
+    '<rect x="29" y="117" rx="13" width="242" height="47" fill="#ffebf0" stroke="#ef9cae"/><text x="150" y="136">Expanding gel → internal pressure</text><text x="150" y="153" fill="#b13258">CRACKING</text></g>';
+  }else if([3,5,6,7].includes(i)){
+    caption=i===7?'SSD: pores full, surface dry':'Bulk volume includes gaps between aggregate particles';
+    g='<rect x="50" y="28" width="198" height="140" rx="10" fill="#eaf3ff" stroke="#93a9d8" stroke-width="3"/>'+
+    '<g fill="#aab0bc" stroke="#6a789b" stroke-width="2"><circle cx="89" cy="68" r="22"/><circle cx="140" cy="59" r="19"/><circle cx="194" cy="72" r="27"/><circle cx="100" cy="130" r="26"/><circle cx="164" cy="132" r="30"/><circle cx="222" cy="133" r="19"/></g>'+
+    '<g fill="#7a67ec" opacity=".32"><circle cx="129" cy="101" r="11"/><circle cx="210" cy="102" r="13"/><circle cx="74" cy="106" r="8"/></g>'+
+    '<text x="150" y="193" fill="#313775" font-family="Arial" font-size="13" text-anchor="middle">Mass ÷ Bulk volume</text>';
+  }else if([4,8,11,13,14,15,16,17].includes(i)){
+    caption=i>=14?'Sieve analysis: passing percentages and particle sizes':'Sieve grading: finer particles pass lower screens';
+    g='<g stroke="#7d85c0" fill="#eeefff" stroke-width="2">'+
+    '<ellipse cx="149" cy="54" rx="95" ry="16"/><ellipse cx="149" cy="84" rx="85" ry="14"/><ellipse cx="149" cy="113" rx="73" ry="12"/><ellipse cx="149" cy="140" rx="62" ry="10"/>'+
+    '<path d="M54 54v15q95 30 190 0V54M64 84v15q85 27 170 0V84M76 113v13q73 22 146 0v-13" fill="#e1e4ff" stroke="#8293d7"/></g>'+
+    '<g fill="#a4a7b2" stroke="#656d88"><circle cx="95" cy="51" r="7"/><circle cx="136" cy="50" r="7"/><circle cx="182" cy="50" r="7"/><circle cx="146" cy="78" r="4"/><circle cx="171" cy="82" r="4"/><circle cx="134" cy="111" r="2"/></g>'+
+    '<path d="M268 54v97m-5-9 5 9 5-9" fill="none" stroke="#6556da" stroke-width="2"/>'+
+    '<text x="150" y="187" fill="#313775" font-family="Arial" font-size="13" text-anchor="middle">Large → Small particles</text>';
+  }else if([0,9,10,12].includes(i)){
+    caption=i===12?'Moisture films cause bulking of fine sand':'Particle packing: smaller grains fill voids between larger grains';
+    g='<g fill="#c1aa8f" stroke="#937e68" stroke-width="2"><circle cx="57" cy="93" r="30"/><circle cx="127" cy="91" r="30"/><circle cx="200" cy="93" r="32"/><circle cx="95" cy="150" r="26"/><circle cx="172" cy="153" r="24"/><circle cx="249" cy="145" r="22"/></g>'+
+    '<g fill="#7060e8" opacity=".65"><circle cx="93" cy="100" r="8"/><circle cx="165" cy="104" r="8"/><circle cx="138" cy="139" r="9"/><circle cx="222" cy="145" r="8"/></g>'+
+    '<text x="150" y="197" fill="#313775" font-family="Arial" font-size="13" text-anchor="middle">Grading → Better packing</text>';
+  }else if([18,19,27].includes(i)){
+    caption='C₃S = early strength · C₂S = later strength · C₃A = sulfate sensitivity';
+    g='<g text-anchor="middle" font-family="Arial" fill="#222451">'+
+      '<circle cx="63" cy="82" r="37" fill="#dde5ff" stroke="#a8b7f1"/><text x="63" y="80" font-size="20">C₃S</text><text x="63" y="97" font-size="10">Early</text>'+
+      '<circle cx="150" cy="82" r="37" fill="#d9f3f0" stroke="#94d8d2"/><text x="150" y="80" font-size="20">C₂S</text><text x="150" y="97" font-size="10">Later</text>'+
+      '<circle cx="237" cy="82" r="37" fill="#f6e2f1" stroke="#dfadd0"/><text x="237" y="80" font-size="20">C₃A</text><text x="237" y="97" font-size="10">Sulfate</text>'+
+      '<path d="M35 145h230" stroke="#685cdb" stroke-width="2"/><text x="150" y="167" font-size="13">Main clinker compounds</text></g>';
+  }else if([20,23,26].includes(i)){
+    caption='Gypsum regulates C₃A hydration and ettringite formation';
+    g='<g font-family="Arial" font-size="13" text-anchor="middle" fill="#282b59">'+
+      '<rect x="12" y="45" width="78" height="59" rx="12" fill="#fce6e8" stroke="#e8abb1"/><text x="51" y="79">C₃A</text>'+
+      '<rect x="110" y="45" width="78" height="59" rx="12" fill="#fff0d7" stroke="#eac889"/><text x="149" y="79">Gypsum</text>'+
+      '<rect x="208" y="45" width="82" height="59" rx="12" fill="#dff5ed" stroke="#91d9bd"/><text x="249" y="79">Ettringite</text>'+
+      '<text x="100" y="82" font-size="23">+</text><text x="196" y="82" font-size="23">→</text>'+
+      '<text x="150" y="151">AFt: initial hydration product</text></g>';
+  }else if([21,28].includes(i)){
+    caption='Free CaO and MgO hydrate → volume expansion and unsoundness';
+    g='<g font-family="Arial" font-size="14" fill="#2f356a" text-anchor="middle">'+
+      '<rect x="22" y="45" width="76" height="60" rx="12" fill="#e4e7ff" stroke="#aaaaf0"/><text x="60" y="72">CaO</text><text x="60" y="90">MgO</text>'+
+      '<text x="118" y="83" font-size="22">+</text>'+
+      '<rect x="138" y="45" width="59" height="60" rx="12" fill="#dff6ff" stroke="#9dd9e4"/><text x="167" y="81">H₂O</text>'+
+      '<text x="207" y="83" font-size="22">→</text>'+
+      '<rect x="224" y="45" width="65" height="60" rx="12" fill="#ffe8ef" stroke="#edb5c5"/><text x="256" y="71">Late</text><text x="256" y="88">expansion</text>'+
+      '<path d="M60 129L82 150 68 165 99 183" fill="none" stroke="#d95372" stroke-width="3"/><text x="182" y="154">Unsound cement</text></g>';
+  }else if(i===29){
+    caption='Clinker process: raw materials → kiln → clinker → gypsum';
+    g='<g font-family="Arial" font-size="12" fill="#252a5b" text-anchor="middle">'+
+      '<rect x="4" y="62" width="74" height="57" rx="10" fill="#e9edff" stroke="#abb6ef"/><text x="41" y="85">Raw</text><text x="41" y="103">materials</text>'+
+      '<text x="87" y="93" font-size="18">→</text>'+
+      '<rect x="104" y="62" width="70" height="57" rx="10" fill="#ffecdc" stroke="#eab88f"/><text x="139" y="85">Kiln</text><text x="139" y="103">1480°C</text>'+
+      '<text x="184" y="93" font-size="18">→</text>'+
+      '<rect x="199" y="62" width="95" height="57" rx="10" fill="#d9f5ee" stroke="#96d8c3"/><text x="247" y="85">Clinker</text><text x="247" y="103">then gypsum</text>'+
+      '<text x="150" y="159">Gypsum is added after clinker manufacture</text></g>';
+  }else{
+    caption='Cement composition and chemical properties';
+    g='<g fill="#e8e5ff" stroke="#9994dc"><circle cx="75" cy="100" r="39"/><circle cx="148" cy="75" r="34"/><circle cx="212" cy="116" r="39"/></g><g text-anchor="middle" font-family="Arial" fill="#373678" font-size="14"><text x="75" y="105">Oxides</text><text x="148" y="80">Clinker</text><text x="212" y="121">Cement</text></g>';
+  }
+  return vizFrame(g,caption);
+}
+function surveyCard(){
+  return '<section class="survey" id="survey"><div class="survey-head"><span class="survey-icon">☑</span><h2>رأيك يهمّنا!</h2><p>هل نكمل باقي مواد السنة ونعمل موقع مراجعات مجاني؟ اختار رأيك وأرسله في النموذج.</p></div>'+
+  '<iframe title="استطلاع رأيك في استمرار موقع المواد" loading="lazy" src="https://form.jotform.com/263130988691063"></iframe>'+
+  '<div style="text-align:center"><a class="form-link" href="https://form.jotform.com/263130988691063" target="_blank" rel="noopener noreferrer">لو النموذج مش ظاهر عندك، افتحه مباشرة لإرسال رأيك ↗</a></div></section>';
+}
+
 function home(){
 var passed=count(s.revealed);
 return '<section class="card"><h2>جاهز نذاكر؟</h2><p class="muted">كل سؤال فيه شرح إنجليزي سهل، وشرح عربي كامل من المحاضرة، والنقاط اللي لازم تحفظها، وبعدها سؤال الامتحان الأصلي. لما تجاوب تشوف ليه كل اختيار صح أو غلط.</p>'+pct(passed)+'<div class="mini">اتشرح واتراجع '+passed+' من 30 سؤال</div></section>'+
